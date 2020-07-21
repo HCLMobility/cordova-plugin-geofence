@@ -1,34 +1,40 @@
 package com.cowbell.cordova.geofence;
 
-import android.app.PendingIntent;
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingClient;
+import com.google.android.gms.location.GeofencingRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import org.apache.cordova.CallbackContext;
-import org.apache.cordova.PluginResult;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class GeoNotificationManager {
     private Context context;
-    private GeoNotificationStore geoNotificationStore;
     private Logger logger;
-    private List<Geofence> geoFences;
-    private PendingIntent pendingIntent;
-    private GoogleServiceCommandExecutor googleServiceCommandExecutor;
+
+    private GeoNotificationStore geoNotificationStore;
+    private GeofencingClient geofencingClient = null;
+    private GeofenceHelper geofenceHelper = null;
 
     public GeoNotificationManager(Context context) {
         this.context = context;
-        geoNotificationStore = new GeoNotificationStore(context);
         logger = Logger.getLogger();
-        googleServiceCommandExecutor = new GoogleServiceCommandExecutor();
-        pendingIntent = getTransitionPendingIntent();
+        geoNotificationStore = new GeoNotificationStore(context);
+        geofencingClient = LocationServices.getGeofencingClient(context);
+        geofenceHelper = new GeofenceHelper(context);
+
         if (areGoogleServicesAvailable()) {
             logger.log(Log.DEBUG, "Google play services available");
         } else {
@@ -38,20 +44,10 @@ public class GeoNotificationManager {
 
     public void loadFromStorageAndInitializeGeofences() {
         List<GeoNotification> geoNotifications = geoNotificationStore.getAll();
-        geoFences = new ArrayList<Geofence>();
         for (GeoNotification geo : geoNotifications) {
-            geoFences.add(geo.toGeofence());
+            addGeoNotification(geo, null);
         }
-        if (!geoFences.isEmpty()) {
-            googleServiceCommandExecutor.QueueToExecute(
-                new AddGeofenceCommand(context, pendingIntent, geoFences)
-            );
-        }
-    }
 
-    public List<GeoNotification> getWatched() {
-        List<GeoNotification> geoNotifications = geoNotificationStore.getAll();
-        return geoNotifications;
     }
 
     private boolean areGoogleServicesAvailable() {
@@ -65,33 +61,56 @@ public class GeoNotificationManager {
         }
     }
 
+    @SuppressLint("MissingPermission")
     public void addGeoNotifications(List<GeoNotification> geoNotifications,
                                     final CallbackContext callback) {
-        List<Geofence> newGeofences = new ArrayList<Geofence>();
         for (GeoNotification geo : geoNotifications) {
             geoNotificationStore.setGeoNotification(geo);
-            newGeofences.add(geo.toGeofence());
+            addGeoNotification(geo, callback);
         }
-        AddGeofenceCommand geoFenceCmd = new AddGeofenceCommand(
-            context,
-            pendingIntent,
-            newGeofences
-        );
-        if (callback != null) {
-            geoFenceCmd.addListener(new CommandExecutionHandler(callback));
-        }
-        googleServiceCommandExecutor.QueueToExecute(geoFenceCmd);
+
+    }
+
+    @SuppressLint("MissingPermission")
+    public void addGeoNotification(GeoNotification geo,
+                                   final CallbackContext callback) {
+        GeofencingRequest geofencingRequest = geofenceHelper.getGeofencingRequest(geo.toGeofence());
+
+        geofencingClient.addGeofences(geofencingRequest, geofenceHelper.getPendingIntent())
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        if (callback != null) callback.success();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        if (callback != null) callback.error(geofenceHelper.getErrorString(e));
+                    }
+                });
+
+
     }
 
     public void removeGeoNotifications(List<String> ids, final CallbackContext callback) {
-        RemoveGeofenceCommand cmd = new RemoveGeofenceCommand(context, ids);
-        if (callback != null) {
-            cmd.addListener(new CommandExecutionHandler(callback));
-        }
+        geofencingClient.removeGeofences(geofenceHelper.getPendingIntent())
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        callback.success();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.error(geofenceHelper.getErrorString(e));
+                    }
+                });
+
         for (String id : ids) {
             geoNotificationStore.remove(id);
         }
-        googleServiceCommandExecutor.QueueToExecute(cmd);
     }
 
     public void removeAllGeoNotifications(final CallbackContext callback) {
@@ -103,14 +122,5 @@ public class GeoNotificationManager {
         removeGeoNotifications(geoNotificationsIds, callback);
     }
 
-    /*
-     * Create a PendingIntent that triggers an IntentService in your app when a
-     * geofence transition occurs.
-     */
-    private PendingIntent getTransitionPendingIntent() {
-        Intent intent = new Intent(context, ReceiveTransitionsIntentService.class);
-        logger.log(Log.DEBUG, "Geofence Intent created!");
-        return PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-    }
 
 }

@@ -16,23 +16,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class GeofencePlugin extends CordovaPlugin {
     public static final String TAG = "GeofencePlugin";
-
-    public static final String ERROR_UNKNOWN = "UNKNOWN";
-    public static final String ERROR_PERMISSION_DENIED = "PERMISSION_DENIED";
-    public static final String ERROR_GEOFENCE_NOT_AVAILABLE = "GEOFENCE_NOT_AVAILABLE";
-    public static final String ERROR_GEOFENCE_LIMIT_EXCEEDED = "GEOFENCE_LIMIT_EXCEEDED";
 
     private GeoNotificationManager geoNotificationManager;
     private Context context;
@@ -93,9 +81,6 @@ public class GeofencePlugin extends CordovaPlugin {
                     geoNotificationManager.removeGeoNotifications(ids, callbackContext);
                 } else if (action.equals("removeAll")) {
                     geoNotificationManager.removeAllGeoNotifications(callbackContext);
-                } else if (action.equals("getWatched")) {
-                    List<GeoNotification> geoNotifications = geoNotificationManager.getWatched();
-                    callbackContext.success(Gson.get().toJson(geoNotifications));
                 } else if (action.equals("initialize")) {
                     initialize(callbackContext);
                 } else if (action.equals("deviceReady")) {
@@ -117,9 +102,7 @@ public class GeofencePlugin extends CordovaPlugin {
     }
 
     public static void onTransitionReceived(List<GeoNotification> notifications) {
-            // JOSH: this might be where I send the ping
         Log.d(TAG, "Transition Event Received!");
-        Log.d(TAG, "Transition Event Received: args: " + Gson.get().toJson(notifications));
         String js = "setTimeout('geofence.onTransitionReceived("
             + Gson.get().toJson(notifications) + ")',0)";
         if (webView == null) {
@@ -129,36 +112,6 @@ public class GeofencePlugin extends CordovaPlugin {
         }
     }
 
-    public static void sendAjax(GeoNotification notification) {
-        Log.d(TAG, "sendAjax!");
-        Log.d(TAG, "Transition sendAjax! "+notification.url);
-
-        URL url;
-        HttpURLConnection urlConnection = null;
-        try {
-            url = new URL(notification.url);
-            urlConnection = (HttpURLConnection) url.openConnection();
-
-            InputStream in = urlConnection.getInputStream();
-
-            InputStreamReader isw = new InputStreamReader(in);
-
-            int data = isw.read();
-            while (data != -1) {
-                char current = (char) data;
-                data = isw.read();
-                System.out.print(current);
-            }
-        } 
-        catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (urlConnection != null) {
-                urlConnection.disconnect();
-            }    
-        }
-    }
-    
     private void deviceReady() {
         Intent intent = cordova.getActivity().getIntent();
         String data = intent.getStringExtra("geofence.notification.data");

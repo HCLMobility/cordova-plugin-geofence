@@ -1,8 +1,9 @@
 package com.cowbell.cordova.geofence;
 
+import android.app.Notification;
+
 import com.google.android.gms.location.Geofence;
 import com.google.gson.annotations.Expose;
-import java.util.*;
 
 public class GeoNotification {
     @Expose public String id;
@@ -10,21 +11,9 @@ public class GeoNotification {
     @Expose public double longitude;
     @Expose public int radius;
     @Expose public int transitionType;
-    @Expose public String url;
-    @Expose public String auth;
-    
 
-    @Expose public Notification notification;
 
     public GeoNotification() {
-    }
-
-    public Geofence toGeofence() {
-        return new Geofence.Builder()
-            .setRequestId(id)
-            .setTransitionTypes(transitionType)
-            .setCircularRegion(latitude, longitude, radius)
-            .setExpirationDuration(Long.MAX_VALUE).build();
     }
 
     public String toJson() {
@@ -34,5 +23,15 @@ public class GeoNotification {
     public static GeoNotification fromJson(String json) {
         if (json == null) return null;
         return Gson.get().fromJson(json, GeoNotification.class);
+    }
+
+    public Geofence toGeofence() {
+        return new Geofence.Builder()
+                .setCircularRegion(latitude, longitude, radius)
+                .setRequestId(id)
+                .setTransitionTypes(transitionType)
+                .setLoiteringDelay(30000)
+                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                .build();
     }
 }
