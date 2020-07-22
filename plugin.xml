@@ -26,6 +26,7 @@
     <!-- android -->
     <platform name="android">
         <source-file src="src/android/BootReceiver.java" target-dir="src/com/cowbell/cordova/geofence" />
+        <source-file src="src/android/Notification.java" target-dir="src/com/cowbell/cordova/geofence" />
         <source-file src="src/android/GeoNotification.java" target-dir="src/com/cowbell/cordova/geofence" />
         <source-file src="src/android/GeoNotificationManager.java" target-dir="src/com/cowbell/cordova/geofence" />
         <source-file src="src/android/GeofencePlugin.java" target-dir="src/com/cowbell/cordova/geofence" />
@@ -34,7 +35,7 @@
         <source-file src="src/android/LocalStorageDBHelper.java" target-dir="src/com/cowbell/cordova/geofence" />
         <source-file src="src/android/Logger.java" target-dir="src/com/cowbell/cordova/geofence" />
         <source-file src="src/android/GeofenceHelper.java" target-dir="src/com/cowbell/cordova/geofence" />
-        <source-file src="src/android/GeofenceBroadcastReceiver.java" target-dir="src/com/cowbell/cordova/geofence" />
+        <source-file src="src/android/GeofenceBroadcastReceiver.java" target-dir="src/com/cowbell/cordova/geofence" />        
         <source-file src="src/android/NotificationHelper.java" target-dir="src/com/cowbell/cordova/geofence" />
         <source-file src="src/android/GeoNotificationStore.java" target-dir="src/com/cowbell/cordova/geofence" />
 
