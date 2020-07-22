@@ -43,14 +43,15 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                     if (geoNotification != null) {
                         switch (transitionType) {
                             case Geofence.GEOFENCE_TRANSITION_ENTER:
-                                new NotificationHelper(context).sendHighPriorityNotification("GEOFENCE_TRANSITION_ENTER", "");
                                 break;
                             case Geofence.GEOFENCE_TRANSITION_DWELL:
-                                new NotificationHelper(context).sendHighPriorityNotification("GEOFENCE_TRANSITION_DWELL", "");
                                 break;
                             case Geofence.GEOFENCE_TRANSITION_EXIT:
-                                new NotificationHelper(context).sendHighPriorityNotification("GEOFENCE_TRANSITION_EXIT", "");
                                 break;
+                        }
+
+                        if (geoNotification.notification != null) {
+                            new NotificationHelper(context).sendHighPriorityNotification(geoNotification.notification);
                         }
 
                         geoNotification.transitionType = transitionType;
@@ -65,7 +66,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 String error = "Geofence transition error: " + transitionType;
             }
         }
-
 
 
     }
