@@ -1,7 +1,5 @@
 package com.cowbell.cordova.geofence;
 
-import android.app.Notification;
-
 import com.google.android.gms.location.Geofence;
 import com.google.gson.annotations.Expose;
 
@@ -12,6 +10,7 @@ public class GeoNotification {
     @Expose public int radius;
     @Expose public int transitionType;
 
+    @Expose public Notification notification;
 
     public GeoNotification() {
     }

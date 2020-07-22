@@ -13,16 +13,14 @@ import android.os.Build;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.app.TaskStackBuilder;
 
+class NotificationHelper extends ContextWrapper {
 
-import com.hcl.plugintest.R;
-
-import java.util.Random;
-
-public class NotificationHelper extends ContextWrapper {
-
+    Context context;
     public NotificationHelper(Context base) {
         super(base);
+        context = base;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createChannels();
         }
@@ -43,37 +41,35 @@ public class NotificationHelper extends ContextWrapper {
         manager.createNotificationChannel(notificationChannel);
     }
 
-    public void sendHighPriorityNotification(String title, String body, Class activityName) {
+    public void sendHighPriorityNotification(com.cowbell.cordova.geofence.Notification notify) {
 
-        Intent intent = new Intent(this, activityName);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 267, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-//                .setContentTitle(title)
-//                .setContentText(body)
-                .setSmallIcon(R.drawable.notification_icon)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setStyle(new NotificationCompat.BigTextStyle().setSummaryText("summary").setBigContentTitle(title).bigText(body))
-                .setContentIntent(pendingIntent)
+        notify.setContext(context);
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setVibrate(notify.getVibrate())
+                .setSmallIcon(notify.getSmallIcon())
+                .setLargeIcon(notify.getLargeIcon())
                 .setAutoCancel(true)
-                .build();
+                .setContentTitle(notify.getTitle())
+                .setContentText(notify.getText())
+                .setPriority(NotificationCompat.PRIORITY_HIGH);
 
-        NotificationManagerCompat.from(this).notify(new Random().nextInt(), notification);
+        if (notify.openAppOnClick) {
+            String packageName = context.getPackageName();
+            Intent resultIntent = context.getPackageManager()
+                    .getLaunchIntentForPackage(packageName);
 
-    }
+            if (notify.data != null) {
+                resultIntent.putExtra("geofence.notification.data", notify.getDataJson());
+            }
 
-    public void sendHighPriorityNotification(String title, String body) {
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
+            stackBuilder.addNextIntent(resultIntent);
+            PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(
+                    notify.id, PendingIntent.FLAG_UPDATE_CURRENT);
+            mBuilder.setContentIntent(resultPendingIntent);
+        }
 
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-//                .setContentTitle(title)
-//                .setContentText(body)
-                .setSmallIcon(R.drawable.notification_icon)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setStyle(new NotificationCompat.BigTextStyle().setSummaryText("summary").setBigContentTitle(title).bigText(body))
-                .setAutoCancel(true)
-                .build();
-
-        NotificationManagerCompat.from(this).notify(new Random().nextInt(), notification);
+        NotificationManagerCompat.from(this).notify(notify.id, mBuilder.build());
 
     }
 
