@@ -1,6 +1,7 @@
 package com.cowbell.cordova.geofence;
 
 import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingRequest;
 import com.google.gson.annotations.Expose;
 
 public class GeoNotification {
@@ -31,6 +32,7 @@ public class GeoNotification {
                 .setTransitionTypes(transitionType)
                 .setLoiteringDelay(30000)
                 .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL|INITIAL_TRIGGER_ENTER|INITIAL_TRIGGER_EXIT)
                 .build();
     }
 }
